@@ -281,3 +281,143 @@ fn validator_is_claiming_too_frequently(&mut self,
 
     return false;
 }*/
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::default::Default;
+    use std::collections::HashMap;
+    use sawtooth_sdk::consensus::{engine::*,service::Service};
+
+    pub struct MockService {}
+
+    impl MockService {
+        pub fn new() -> MockService {
+        MockService {}
+        }
+    }
+
+    impl Service for MockService {
+        fn send_to(
+            &mut self,
+            _peer: &PeerId,
+            _message_type: &str,
+            _payload: Vec<u8>,
+        ) -> Result<(), Error> {
+            Ok(())
+        }
+        fn broadcast(&mut self, _message_type: &str, _payload: Vec<u8>) -> Result<(), Error> {
+            Ok(())
+        }
+        fn initialize_block(&mut self, _previous_id: Option<BlockId>) -> Result<(), Error> {
+            Ok(())
+        }
+        fn summarize_block(&mut self) -> Result<Vec<u8>, Error> {
+            Ok(Default::default())
+        }
+        fn finalize_block(&mut self, _data: Vec<u8>) -> Result<BlockId, Error> {
+            Ok(Default::default())
+        }
+        fn cancel_block(&mut self) -> Result<(), Error> {
+            Ok(())
+        }
+        fn check_blocks(&mut self, _priority: Vec<BlockId>) -> Result<(), Error> {
+            Ok(())
+        }
+        fn commit_block(&mut self, _block_id: BlockId) -> Result<(), Error> {
+            Ok(())
+        }
+        fn ignore_block(&mut self, _block_id: BlockId) -> Result<(), Error> {
+            Ok(())
+        }
+        fn fail_block(&mut self, _block_id: BlockId) -> Result<(), Error> {
+            Ok(())
+        }
+        fn get_blocks(
+            &mut self,
+            _block_ids: Vec<BlockId>,
+        ) -> Result<HashMap<BlockId, Block>, Error> {
+            Ok(Default::default())
+        }
+        fn get_chain_head(&mut self) -> Result<Block, Error> {
+            Ok(Default::default())
+        }
+
+        fn get_settings(
+            &mut self,
+            _block_id: BlockId,
+            _settings: Vec<String>,
+        ) -> Result<HashMap<String, String>, Error> {
+
+            let mut map: HashMap<String, String> = HashMap::new();
+            map.insert(String::from("sawtooth.poet.block_claim_delay"), 4.to_string());
+            Ok(map)
+        }
+
+        fn get_state(
+            &mut self,
+            _block_id: BlockId,
+            _addresses: Vec<String>,
+        ) -> Result<HashMap<String, Vec<u8>>, Error> {
+            Ok(Default::default())
+        }
+    }
+
+    fn create_block(c_blockid: BlockId, p_blockid: BlockId, block_num: u64) -> Block {
+        Block {
+            block_id: c_blockid,
+            previous_id: p_blockid,
+            signer_id: PeerId::from(vec![1]),
+            block_num: block_num,
+            payload: vec![],
+            summary: vec![],
+        }
+    }
+
+    fn assert_validator_is_claiming_too_early(c_test1: bool, block: Block, service: &mut Poet2Service) {
+        let result :bool = validator_is_claiming_too_early(&block, service);
+        assert_eq!(result, c_test1);
+    }
+
+    #[test]
+    fn test_c_test_small_bc() {
+         let mut svc = Poet2Service::new(Box::new(MockService {}));
+
+         let mut a = create_block(BlockId::from(vec![1]), BlockId::from(vec![0]), 1);
+         let mut b = create_block(BlockId::from(vec![2]), BlockId::from(vec![1]), 2);
+
+         let c_test1:bool = false;
+
+         assert_validator_is_claiming_too_early(c_test1, b, &mut svc);
+    }
+
+    #[test]
+    fn test_c_test_med_bc() {
+         let mut svc = Poet2Service::new(Box::new(MockService {}));
+
+         let mut a = create_block(BlockId::from(vec![1]), BlockId::from(vec![0]), 1);
+         let mut b = create_block(BlockId::from(vec![2]), BlockId::from(vec![1]), 2);
+         let mut c = create_block(BlockId::from(vec![3]), BlockId::from(vec![2]), 3);
+         let mut d = create_block(BlockId::from(vec![4]), BlockId::from(vec![3]), 4);
+
+         let c_test1:bool = false;
+
+         assert_validator_is_claiming_too_early(c_test1, d, &mut svc);
+    }
+
+    #[test]
+    fn test_c_test_big_bc() {
+         let mut svc = Poet2Service::new(Box::new(MockService {}));
+
+         let mut a = create_block(BlockId::from(vec![1]), BlockId::from(vec![0]), 1);
+         let mut b = create_block(BlockId::from(vec![2]), BlockId::from(vec![1]), 2);
+         let mut c = create_block(BlockId::from(vec![3]), BlockId::from(vec![2]), 3);
+         let mut d = create_block(BlockId::from(vec![4]), BlockId::from(vec![3]), 44);
+
+         let c_test1:bool = false;
+
+         assert_validator_is_claiming_too_early(c_test1, d, &mut svc);
+    }
+
+}
