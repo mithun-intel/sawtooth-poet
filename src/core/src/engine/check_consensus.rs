@@ -300,6 +300,7 @@ mod tests {
 
             let mut map: HashMap<String, String> = HashMap::new();
             map.insert(String::from("sawtooth.poet.block_claim_delay"), 4.to_string());
+            map.insert(String::from("sawtooth.poet.key_block_claim_limit"), 8.to_string());
             Ok(map)
         }
 
@@ -335,6 +336,13 @@ mod tests {
         let result :bool = validator_is_claiming_too_early(&block, service);
         assert!(result);
     }
+
+
+    fn assert_validtor_has_claimed_block_limit(k_test1: bool, service: &mut Poet2Service) {
+        let result :bool = validtor_has_claimed_block_limit(service);
+        assert_eq!(result, k_test1);
+    }
+
 
     #[test]
     fn c_test_block_claim_delay_gt_block_num() {
@@ -444,4 +452,16 @@ mod tests {
 
         should_panic_validator_is_claiming_too_early(b, &mut svc);
     }
+
+    #[test]
+    fn k_test_1() {
+         let mut svc = Poet2Service::new(Box::new(MockService {}));
+
+         // let c = create_block(BlockId::from(vec![3]), BlockId::from(vec![2]), 3);
+
+         let k_test1:bool = true;
+
+         assert_validtor_has_claimed_block_limit(k_test1, &mut svc);
+    }
+
 }
